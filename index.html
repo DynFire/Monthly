@@ -337,8 +337,8 @@ if (sessionStorage.getItem('dynamic_auth') === '1') {
 
 <!-- FOOTER -->
 <div class="save-footer">
-  <button class="btn-email" onclick="doEmail()">📧 Email Report</button>
-  <button class="btn-copy"  onclick="doCopy()">📋 Copy Report</button>
+  <button class="btn-email" onclick="doEmail()">📧 Save PDF &amp; Email</button>
+  <button class="btn-copy"  onclick="doCopy()">📥 Download PDF</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -348,13 +348,13 @@ if (sessionStorage.getItem('dynamic_auth') === '1') {
 // ╠══════════════════════════════════════════════════════╣
 // ║  1. Add your site/building names to this list       ║
 const SITES = [
-  '1770 WOODWARD',
-  // '2920 FAIRLEA',
-  // '2969 FAIRLEA',
-  // '3530 DOWNPATRICK', '3532 DOWNPATRICK', '3532 DOWNPATRICK', '150 CAROLINE', '1971 ST LAURENT', '1975 ST LAURENT', '305 METCALFE', '100 FOURTH', '415 GREENVIEW', '80 SANDCASTLE', '2880 CARLING', '2900 CARLING', '2181 NAVAHO', '3360 PAUL ANKA', '29 ANTARES', '1251 MARITIME', '578 TERRY FOX', '224 LYON', '125 SOMMERSET', '138 SOMMERSET', Add more sites here...
+  '75 Slater',
+  // '123 Main St',
+  // '456 Bank St',
+  // Add more sites here...
 ];
 // ║  2. The email address completed reports go to       ║
-const REPORT_TO = 'operations@dynamicelectric.ca';
+const REPORT_TO = 'inspections@dynamicelectric.ca';
 // ╚══════════════════════════════════════════════════════╝
 
 const FA_CHECKS = [
@@ -552,71 +552,371 @@ function clearSig(id) {
 // ── REPORT BUILDER ─────────────────────────────────────
 const v=id=>{const e=document.getElementById(id);return e?(e.value||''):''};
 
-function buildReport() {
-  const site=getSite();
-  const monthYear=new Date().toLocaleString('en-CA',{month:'long',year:'numeric'});
-  const line='─'.repeat(54);
-  let t=`MONTHLY FIRE INSPECTION REPORT\nDynamic Electric & Fire Protection Inc.  ·  613-226-9967\nSite: ${site}  ·  ${monthYear}\n${line}\n`;
+// ── PDF GENERATION ─────────────────────────────────────
+function buildPDF() {
+  const site = getSite();
+  const monthYear = new Date().toLocaleString('en-CA',{month:'long',year:'numeric'});
+  const doc = new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  const PW = 215.9, PH = 279.4;
+  const ML = 12, MR = 12, MT = 12;
+  const CW = PW - ML - MR;
+  let y = MT;
+  let pageNum = 1;
 
-  // Section 1 — Fire Alarm
-  t+=`\nSECTION 1 — FIRE ALARM SYSTEM (CAN/ULC-S536-19)\n`;
-  t+=`FA: ${v('fa-fanum')}  |  Asset: ${v('fa-asset')}  |  Region: ${v('fa-region')}  |  Year: ${v('fa-year')}\n${line}\n`;
-  let faAny=false;
+  // colours
+  const NAVY   = [26,46,90];
+  const ORANGE = [234,106,39];
+  const WHITE  = [255,255,255];
+  const LTGRAY = [245,245,243];
+  const MDGRAY = [200,200,196];
+  const TEXT   = [26,26,26];
+  const TMID   = [85,85,85];
+  const GREEN  = [234,243,222];
+  const GTXT   = [59,109,17];
+  const RED    = [252,235,235];
+  const RTXT   = [163,45,45];
+  const AMBER  = [250,238,218];
+  const ATXT   = [133,79,11];
+
+  function checkPage(need=10) {
+    if (y + need > PH - 14) {
+      // footer on current page
+      drawFooter();
+      doc.addPage();
+      pageNum++;
+      y = MT;
+      drawPageHeader();
+    }
+  }
+
+  function drawFooter() {
+    doc.setFillColor(...NAVY);
+    doc.rect(0, PH-10, PW, 10, 'F');
+    doc.setFontSize(7); doc.setTextColor(...WHITE); doc.setFont('helvetica','normal');
+    doc.text('Dynamic Electric & Fire Protection Inc.  |  613-226-9967  |  NFCC requires records retained minimum 2 years', PW/2, PH-4, {align:'center'});
+    doc.text(`Page ${pageNum}`, PW-ML, PH-4, {align:'right'});
+  }
+
+  function drawPageHeader() {
+    // navy bar
+    doc.setFillColor(...NAVY);
+    doc.rect(0, 0, PW, 14, 'F');
+    // logo bars
+    doc.setFillColor(91,142,240); doc.rect(ML, 3.5, 2.5, 7, 'F');
+    doc.setFillColor(...ORANGE);  doc.rect(ML+3.5, 3.5, 2.5, 7, 'F');
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+    doc.text('DYNAMIC', ML+8, 9.5);
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(180,200,240);
+    doc.text('Electric & Fire Protection Inc.  |  613-226-9967', ML+8, 13);
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+    doc.text('Monthly Inspection Report', PW-MR, 9.5, {align:'right'});
+    y = 18;
+  }
+
+  // ── COVER HEADER ──
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, PW, 32, 'F');
+  doc.setFillColor(91,142,240); doc.rect(ML, 7, 3, 14, 'F');
+  doc.setFillColor(...ORANGE);  doc.rect(ML+4.5, 7, 3, 14, 'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+  doc.text('DYNAMIC', ML+10, 17);
+  doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(180,200,240);
+  doc.text('Electric & Fire Protection Inc.  |  613-226-9967', ML+10, 23);
+  doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+  doc.text('Monthly Fire Inspection Report', PW-MR, 17, {align:'right'});
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(200,220,255);
+  doc.text(monthYear, PW-MR, 23, {align:'right'});
+
+  // orange site bar
+  doc.setFillColor(...ORANGE);
+  doc.rect(0, 32, PW, 9, 'F');
+  doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+  doc.text('SITE', ML, 38);
+  doc.setFont('helvetica','normal');
+  doc.text(site, ML+12, 38);
+  y = 45;
+
+  // ── HELPER: section header ──
+  function sectionHeader(title, sub) {
+    checkPage(14);
+    doc.setFillColor(...NAVY);
+    doc.rect(ML, y, CW, 8, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...WHITE);
+    doc.text(title, ML+3, y+5.5);
+    if (sub) {
+      doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(180,200,240);
+      doc.text(sub, PW-MR, y+5.5, {align:'right'});
+    }
+    y += 10;
+  }
+
+  // ── HELPER: info row ──
+  function infoRow(label, val, x, w, yy) {
+    doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...TMID);
+    doc.text(label.toUpperCase(), x, yy);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+    doc.text(val||'—', x, yy+4);
+  }
+
+  // ── HELPER: info card ──
+  function infoCard(fields) {
+    checkPage(fields.length*6+6);
+    doc.setFillColor(...LTGRAY);
+    doc.roundedRect(ML, y, CW, fields.length*6+4, 2, 2, 'F');
+    let ix=ML+3, iy=y+5;
+    const colW = CW/Math.min(fields.length,3);
+    fields.forEach((f,i) => {
+      const col = i % 3;
+      const row = Math.floor(i/3);
+      infoRow(f.label, f.val, ML+3+col*colW, colW-4, y+5+row*7);
+    });
+    y += fields.length<=3 ? 12 : Math.ceil(fields.length/3)*7+6;
+  }
+
+  // ── HELPER: group label ──
+  function groupLabel(text) {
+    checkPage(8);
+    doc.setFillColor(...MDGRAY);
+    doc.rect(ML, y, CW, 5.5, 'F');
+    doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...NAVY);
+    doc.text(text.toUpperCase(), ML+3, y+4);
+    y += 6.5;
+  }
+
+  // ── HELPER: check row ──
+  function checkRow(label, status, comment) {
+    const rowH = comment ? 12 : 7;
+    checkPage(rowH+1);
+    // alternating bg handled by border only
+    doc.setDrawColor(...MDGRAY); doc.setLineWidth(0.2);
+    doc.rect(ML, y, CW, rowH, 'S');
+
+    // status badge
+    const bw = 12;
+    let bgCol, txtCol, sym;
+    if      (status==='ok')   { bgCol=GREEN;  txtCol=GTXT;  sym='PASS'; }
+    else if (status==='fail') { bgCol=RED;    txtCol=RTXT;  sym='FAIL'; }
+    else if (status==='na')   { bgCol=LTGRAY; txtCol=TMID;  sym='N/A';  }
+    else if (status==='nt')   { bgCol=AMBER;  txtCol=ATXT;  sym='N/T';  }
+    else                      { bgCol=LTGRAY; txtCol=TMID;  sym='—';    }
+
+    doc.setFillColor(...bgCol);
+    doc.roundedRect(ML+CW-bw-1, y+1, bw, rowH-2, 1, 1, 'F');
+    doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...txtCol);
+    doc.text(sym, ML+CW-bw/2-1, y+rowH/2+0.5, {align:'center'});
+
+    // label
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+    const maxW = CW - bw - 6;
+    const lines = doc.splitTextToSize(label, maxW);
+    doc.text(lines[0], ML+3, y+5);
+    if (comment) {
+      doc.setFontSize(7); doc.setFont('helvetica','italic'); doc.setTextColor(...TMID);
+      doc.text('Note: '+comment, ML+5, y+9.5);
+    }
+    y += rowH+1;
+  }
+
+  // ── HELPER: yn row ──
+  function ynRow(label, val) {
+    checkPage(8);
+    doc.setDrawColor(...MDGRAY); doc.setLineWidth(0.2);
+    doc.rect(ML, y, CW, 7, 'S');
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+    doc.text(label, ML+3, y+5);
+    const bw=12;
+    const bgCol = val==='y'?GREEN : val==='n'?RED : LTGRAY;
+    const txtCol= val==='y'?GTXT  : val==='n'?RTXT: TMID;
+    doc.setFillColor(...bgCol);
+    doc.roundedRect(ML+CW-bw-1, y+1, bw, 5, 1, 1, 'F');
+    doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...txtCol);
+    doc.text(val==='y'?'YES':val==='n'?'NO':'—', ML+CW-bw/2-1, y+4.5, {align:'center'});
+    y += 8;
+  }
+
+  // ── HELPER: notes row ──
+  function notesRow(label, text) {
+    if (!text) return;
+    checkPage(12);
+    doc.setFillColor(255,248,235);
+    doc.roundedRect(ML, y, CW, 11, 1, 1, 'F');
+    doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...ORANGE);
+    doc.text(label+': ', ML+3, y+4.5);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+    const lines = doc.splitTextToSize(text, CW-20);
+    doc.text(lines[0], ML+3, y+8.5);
+    y += 13;
+  }
+
+  // ── HELPER: small spacer ──
+  function gap(n=3) { y+=n; }
+
+  // ══════════════════════════════
+  // SECTION 1 — FIRE ALARM
+  // ══════════════════════════════
+  sectionHeader('SECTION 1 — FIRE ALARM SYSTEM', 'CAN/ULC-S536-19');
+  infoCard([
+    {label:'FA Panel #',  val:v('fa-fanum')},
+    {label:'Asset #',     val:v('fa-asset')},
+    {label:'Region',      val:v('fa-region')},
+    {label:'Year',        val:v('fa-year')},
+    {label:'Site',        val:site},
+  ]);
+  gap(2);
+
   MONTH_NAMES.forEach((m,idx)=>{
     const keys=FA_CHECKS.map(c=>`fa-${idx}-${c.id}`);
     if(!keys.some(k=>segState[k])&&!v(`fa-date-${idx}`)&&!v(`fa-inspector-${idx}`)) return;
-    faAny=true;
-    t+=`\n${m.toUpperCase()}${v(`fa-date-${idx}`)?' ('+v(`fa-date-${idx}`)+')':''}\n`;
-    if(v(`fa-inspector-${idx}`)) t+=`  Inspector: ${v(`fa-inspector-${idx}`)}\n`;
-    let last='';
+
+    checkPage(12);
+    // month sub-header
+    doc.setFillColor(232,232,229);
+    doc.rect(ML, y, CW, 7, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...NAVY);
+    doc.text(m.toUpperCase(), ML+3, y+5);
+    if (v(`fa-date-${idx}`)) {
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...TMID);
+      doc.text(v(`fa-date-${idx}`), PW-MR, y+5, {align:'right'});
+    }
+    y += 8;
+
+    if (v(`fa-inspector-${idx}`)) {
+      doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...TMID);
+      doc.text('Inspector: '+v(`fa-inspector-${idx}`), ML+3, y+4);
+      y += 6;
+    }
+
+    let lastGrp='';
     FA_CHECKS.forEach(c=>{
-      if(c.group!==last){t+=`  [${c.group}]\n`;last=c.group;}
-      const s=segState[`fa-${idx}-${c.id}`]; if(!s) return;
-      const sym=s==='ok'?'✓':s==='fail'?'✗':s.toUpperCase();
-      t+=`    [${sym}] ${c.label}${v(`cmt-fa-${idx}-${c.id}`)?' — '+v(`cmt-fa-${idx}-${c.id}`):''}\n`;
+      if(c.group!==lastGrp){ groupLabel(c.group); lastGrp=c.group; }
+      const s=segState[`fa-${idx}-${c.id}`]||'';
+      const cmt=v(`cmt-fa-${idx}-${c.id}`);
+      checkRow(c.label, s, cmt);
     });
-    if(v(`fa-loc-dev-${idx}`))  t+=`  Device tested: ${v(`fa-loc-dev-${idx}`)}\n`;
-    if(v(`fa-loc-tel-${idx}`))  t+=`  Tel location: ${v(`fa-loc-tel-${idx}`)}\n`;
-    if(v(`fa-loc-zone-${idx}`)) t+=`  Voice zone: ${v(`fa-loc-zone-${idx}`)}\n`;
-    if(v(`fa-notes-${idx}`))    t+=`  Notes: ${v(`fa-notes-${idx}`)}\n`;
+
+    if(v(`fa-loc-dev-${idx}`)||v(`fa-loc-tel-${idx}`)||v(`fa-loc-zone-${idx}`)) {
+      checkPage(12);
+      doc.setFillColor(...LTGRAY);
+      doc.roundedRect(ML, y, CW, 11, 1, 1, 'F');
+      doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...TMID);
+      doc.text('Device tested:', ML+3, y+4); doc.setFont('helvetica','normal'); doc.text(v(`fa-loc-dev-${idx}`)||'—', ML+28, y+4);
+      doc.setFont('helvetica','bold'); doc.text('Tel location:', ML+3, y+8.5); doc.setFont('helvetica','normal'); doc.text(v(`fa-loc-tel-${idx}`)||'—', ML+24, y+8.5);
+      doc.setFont('helvetica','bold'); doc.text('Voice zone:', ML+CW/2, y+4); doc.setFont('helvetica','normal'); doc.text(v(`fa-loc-zone-${idx}`)||'—', ML+CW/2+22, y+4);
+      y+=13;
+    }
+    notesRow('Notes', v(`fa-notes-${idx}`));
+    gap(4);
   });
-  if(!faAny) t+='  (No data entered)\n';
 
-  // Section 2 — Sprinkler
-  t+=`\n\n${line}\nSECTION 2 — SPRINKLER SYSTEM (OFC Div. B §6.5 / NFPA 25)\n`;
-  t+=`Address: ${v('sp-addr')}  |  System: ${v('sp-type')}  |  Riser: ${v('sp-riser')}\nDate: ${v('sp-date')}  |  Inspector: ${v('sp-inspector')}  |  Owner Rep: ${v('sp-owner')}\n${line}\n`;
-  SP_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
-  t+=`\nFlow Alarm Test:\n  Conducted: ${ynState['sp-fat-done']||'—'}  |  Zone: ${v('sp-fat-zone')}\n`;
-  t+=`  FA Zone OK: ${ynState['sp-fat-fa']||'—'}  |  Monitoring Signal: ${ynState['sp-fat-sig']||'—'}  |  Time Delay OK: ${ynState['sp-fat-delay']||'—'}\n`;
-  if(v('sp-fat-notes')) t+=`  Notes: ${v('sp-fat-notes')}\n`;
+  // ══════════════════════════════
+  // SECTION 2 — SPRINKLER
+  // ══════════════════════════════
+  checkPage(20);
+  sectionHeader('SECTION 2 — SPRINKLER SYSTEM', 'OFC Div. B §6.5 / NFPA 25');
+  infoCard([
+    {label:'Address',    val:v('sp-addr')},
+    {label:'System',     val:v('sp-type')},
+    {label:'Riser/ID',   val:v('sp-riser')},
+    {label:'Date',       val:v('sp-date')},
+    {label:'Inspector',  val:v('sp-inspector')},
+    {label:'Owner Rep',  val:v('sp-owner')},
+  ]);
+  gap(2);
+  groupLabel('Monthly Inspection Checklist');
+  SP_CHECKS.forEach(c=>{ checkRow(c.label, segState[c.id]||'', v(`cmt-${c.id}`)); });
+  gap(4);
+  groupLabel('Flow Alarm Test');
+  ynRow('Flow alarm test conducted', ynState['sp-fat-done']);
+  checkPage(8);
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...TEXT);
+  doc.setDrawColor(...MDGRAY); doc.setLineWidth(0.2);
+  doc.rect(ML, y, CW, 7, 'S');
+  doc.text('Zone / Waterflow switch activated:', ML+3, y+5);
+  doc.setFont('helvetica','bold');
+  doc.text(v('sp-fat-zone')||'—', ML+60, y+5);
+  y+=8;
+  ynRow('Associated fire alarm zone activated correctly', ynState['sp-fat-fa']);
+  ynRow('Signal received at monitoring station', ynState['sp-fat-sig']);
+  ynRow('Time delay acceptable', ynState['sp-fat-delay']);
+  notesRow('Comments', v('sp-fat-notes'));
+  gap(4);
 
-  // Section 3 — Ext + EML
-  t+=`\n\n${line}\nSECTION 3 — FIRE EXTINGUISHERS & EMERGENCY LIGHTING (OFC)\n`;
-  t+=`Address: ${v('el-addr')}  |  Date: ${v('el-date')}  |  Inspector: ${v('el-inspector')}\n${line}\n`;
-  t+=`\nFire Extinguishers — ${v('ext-count')||'?'} units  |  Overall: ${ovState['ext']||'—'}\n`;
-  EXT_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
-  if(v('ext-notes')) t+=`  Notes: ${v('ext-notes')}\n`;
-  t+=`\nEmergency Lighting — ${v('eml-count')||'?'} units  |  Overall: ${ovState['eml']||'—'}\n`;
-  EML_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
-  if(v('eml-notes')) t+=`  Notes: ${v('eml-notes')}\n`;
+  // ══════════════════════════════
+  // SECTION 3 — EXT + EML
+  // ══════════════════════════════
+  checkPage(20);
+  sectionHeader('SECTION 3 — FIRE EXTINGUISHERS & EMERGENCY LIGHTING', 'OFC §6.2 / §2.8 / NFPA 101');
+  infoCard([
+    {label:'Address',   val:v('el-addr')},
+    {label:'Date',      val:v('el-date')},
+    {label:'Inspector', val:v('el-inspector')},
+    {label:'Owner Rep', val:v('el-owner')},
+  ]);
+  gap(2);
 
-  t+=`\n${line}\nNFCC / OFC — retain records minimum 2 years.\nTests per CAN/ULC-S536 and applicable NFPA standards.\n`;
-  return {text:t, site, monthYear};
+  // Extinguisher overall
+  checkPage(10);
+  const extOv = ovState['ext'];
+  doc.setFillColor(...(extOv==='ok'?GREEN:extOv==='fail'?RED:LTGRAY));
+  doc.roundedRect(ML, y, CW, 8, 2, 2, 'F');
+  doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.setTextColor(...(extOv==='ok'?GTXT:extOv==='fail'?RTXT:TMID));
+  doc.text(`ALL FIRE EXTINGUISHERS INSPECTED  (${v('ext-count')||'?'} units)`, ML+4, y+5.5);
+  doc.text(extOv==='ok'?'PASS':extOv==='fail'?'FAIL':'—', PW-MR, y+5.5, {align:'right'});
+  y+=10;
+  groupLabel('Fire Extinguisher Checklist');
+  EXT_CHECKS.forEach(c=>{ checkRow(c.label, segState[c.id]||'', v(`cmt-${c.id}`)); });
+  notesRow('Notes', v('ext-notes'));
+  gap(4);
+
+  // EML overall
+  checkPage(10);
+  const emlOv = ovState['eml'];
+  doc.setFillColor(...(emlOv==='ok'?GREEN:emlOv==='fail'?RED:LTGRAY));
+  doc.roundedRect(ML, y, CW, 8, 2, 2, 'F');
+  doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.setTextColor(...(emlOv==='ok'?GTXT:emlOv==='fail'?RTXT:TMID));
+  doc.text(`ALL EMERGENCY LIGHTING INSPECTED  (${v('eml-count')||'?'} units)`, ML+4, y+5.5);
+  doc.text(emlOv==='ok'?'PASS':emlOv==='fail'?'FAIL':'—', PW-MR, y+5.5, {align:'right'});
+  y+=10;
+  groupLabel('Emergency Lighting Checklist');
+  EML_CHECKS.forEach(c=>{ checkRow(c.label, segState[c.id]||'', v(`cmt-${c.id}`)); });
+  notesRow('Notes', v('eml-notes'));
+
+  // footer on last page
+  drawFooter();
+
+  const filename = `Dynamic_Inspection_${site.replace(/\s+/g,'_')}_${monthYear.replace(/\s+/g,'_')}.pdf`;
+  return {doc, filename, site, monthYear};
 }
 
-// ── EMAIL & COPY ───────────────────────────────────────
+// ── EMAIL & DOWNLOAD ───────────────────────────────────
 function doEmail() {
-  const {text,site,monthYear}=buildReport();
-  const sub=encodeURIComponent(`Monthly Fire Inspection — ${site} — ${monthYear}`);
-  const bod=encodeURIComponent(text);
-  window.location.href=`mailto:${REPORT_TO}?subject=${sub}&body=${bod}`;
+  toast('⏳ Generating PDF...');
+  setTimeout(()=>{
+    try {
+      const {doc, filename, site, monthYear} = buildPDF();
+      doc.save(filename);
+      setTimeout(()=>{
+        const sub = encodeURIComponent(`Monthly Fire Inspection — ${site} — ${monthYear}`);
+        const bod = encodeURIComponent(`Please find the completed monthly fire inspection report attached.\n\nSite: ${site}\nPeriod: ${monthYear}\n\nGenerated by Dynamic Electric & Fire Protection Inc.\n613-226-9967`);
+        window.location.href=`mailto:${REPORT_TO}?subject=${sub}&body=${bod}`;
+        toast('✓ PDF saved — attach it to the email that just opened');
+      }, 800);
+    } catch(e) { toast('Error generating PDF — check console'); console.error(e); }
+  }, 100);
 }
+
 function doCopy() {
-  const {text}=buildReport();
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>toast('✓ Report copied to clipboard')).catch(()=>{console.log(text);toast('See browser console');});}
-  else{console.log(text);toast('See browser console');}
+  toast('⏳ Generating PDF...');
+  setTimeout(()=>{
+    try {
+      const {doc, filename} = buildPDF();
+      doc.save(filename);
+      toast('✓ PDF downloaded!');
+    } catch(e) { toast('Error — check console'); console.error(e); }
+  }, 100);
 }
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
 // ── INIT ───────────────────────────────────────────────
 buildFA();
@@ -626,5 +926,6 @@ buildChecklist('eml-checks',   EML_CHECKS,'3');
 initSig('sp-insp'); initSig('sp-owner');
 initSig('el-insp'); initSig('el-owner');
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
