@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dynamic — Monthly Fire Inspection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2e5a;
+    --navy-mid: #1e3a8a;
+    --navy-light: #e6f1fb;
+    --orange: #ea6a27;
+    --orange-light: #fff0e8;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+    --green-border: #c0dd97;
+    --red-bg: #fcebeb;
+    --red-text: #a32d2d;
+    --red-border: #f7c1c1;
+    --amber-bg: #faeeda;
+    --amber-text: #854f0b;
+    --gray-bg: #f5f5f3;
+    --gray-mid: #e8e8e5;
+    --gray-border: #d4d4d0;
+    --text: #1a1a1a;
+    --text-mid: #555;
+    --text-light: #888;
+    --white: #fff;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: #f0ede8; color: var(--text); min-height: 100vh; }
+
+  .top-bar { background: var(--navy); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+  .top-bar-inner { display: flex; align-items: center; padding: .7rem 1rem; gap: .75rem; }
+  .logo-mark { display: flex; gap: 3px; align-items: center; flex-shrink: 0; }
+  .lb { width: 5px; height: 20px; border-radius: 2px; }
+  .lb-b { background: #5b8ef0; }
+  .lb-o { background: var(--orange); }
+  .logo-text { color: #fff; font-size: 16px; font-weight: 700; letter-spacing: -.3px; line-height: 1; }
+  .logo-sub  { color: rgba(255,255,255,.55); font-size: 10px; font-weight: 500; letter-spacing: .3px; }
+  .top-right { margin-left: auto; color: rgba(255,255,255,.8); font-size: 11px; font-weight: 500; text-align: right; line-height: 1.4; }
+
+  .site-bar { background: var(--orange); padding: .55rem 1rem; display: flex; align-items: center; gap: .6rem; }
+  .site-bar label { color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  .site-select { flex: 1; border: none; border-radius: var(--radius-sm); padding: 7px 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); background: #fff; outline: none; appearance: none; min-width: 0; }
+  .site-custom { flex: 1; border: none; border-radius: var(--radius-sm); padding: 7px 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); background: #fff; outline: none; display: none; min-width: 0; }
+  .site-custom.show { display: block; }
+  .site-custom::placeholder { font-weight: 400; color: var(--text-light); }
+
+  .tab-nav { display: flex; background: var(--navy); border-top: 1px solid rgba(255,255,255,.1); overflow-x: auto; scrollbar-width: none; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex: 1; min-width: 90px; padding: .55rem .5rem; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.45); background: none; border: none; cursor: pointer; text-align: center; letter-spacing: .2px; border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap; }
+  .tab-btn.active { color: #fff; border-bottom-color: var(--orange); }
+  .tab-status { display: block; font-size: 9px; font-weight: 400; margin-top: 1px; opacity: .75; }
+
+  .section { display: none; padding: 1rem; padding-bottom: 7rem; }
+  .section.active { display: block; }
+
+  .card { background: var(--white); border-radius: var(--radius); padding: 1rem; margin-bottom: .75rem; border: 1px solid var(--gray-mid); }
+  .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-light); margin-bottom: .75rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 9px; font-weight: 700; background: var(--navy-light); color: var(--navy-mid); border-radius: 6px; padding: 2px 7px; letter-spacing: .3px; }
+  .badge.or { background: var(--orange-light); color: var(--orange); }
+
+  .field { margin-bottom: .6rem; }
+  .lbl { font-size: 11px; font-weight: 600; color: var(--text-light); margin-bottom: 3px; display: block; text-transform: uppercase; letter-spacing: .3px; }
+  .inp { width: 100%; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); padding: 9px 11px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: var(--white); outline: none; transition: border-color .15s; }
+  .inp:focus { border-color: var(--navy-mid); }
+  .inp::placeholder { color: var(--text-light); }
+  select.inp { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23888' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  textarea.inp { resize: none; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .check-row { border: 1px solid var(--gray-mid); border-radius: var(--radius-sm); padding: .6rem .75rem; margin-bottom: .4rem; }
+  .check-row.has-fail { border-color: var(--red-border); background: #fffafa; }
+  .check-lbl { font-size: 13px; color: var(--text); margin-bottom: .3rem; line-height: 1.4; }
+  .group-hdr { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); margin: .7rem 0 .35rem; }
+  .seg { display: flex; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); overflow: hidden; }
+  .sb { flex: 1; padding: 7px 3px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; background: var(--white); color: var(--text-light); border: none; border-right: 1px solid var(--gray-border); transition: background .12s; }
+  .sb:last-child { border-right: none; }
+  .sb.ok   { background: var(--green-bg);  color: var(--green-text); }
+  .sb.fail { background: var(--red-bg);    color: var(--red-text); }
+  .sb.na   { background: var(--gray-bg);   color: var(--text-light); }
+  .sb.nt   { background: var(--amber-bg);  color: var(--amber-text); }
+  .cmt-inp { margin-top: .35rem; width: 100%; border: 1.5px solid var(--red-border); border-radius: var(--radius-sm); padding: 6px 9px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text); background: #fffafa; outline: none; resize: none; display: none; }
+  .cmt-inp.show { display: block; }
+
+  .yn-row { display: flex; align-items: center; justify-content: space-between; padding: .55rem .75rem; border: 1px solid var(--gray-mid); border-radius: var(--radius-sm); margin-bottom: .4rem; }
+  .yn-lbl { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; padding-right: 8px; }
+  .yn-btns { display: flex; gap: 6px; flex-shrink: 0; }
+  .yn-btn { padding: 5px 13px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--white); color: var(--text-light); transition: all .12s; }
+  .yn-btn.y { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); }
+  .yn-btn.n { background: var(--red-bg);   color: var(--red-text);   border-color: var(--red-border); }
+
+  .overall-row { display: flex; align-items: center; justify-content: space-between; background: var(--gray-bg); border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); padding: .7rem .85rem; margin-bottom: .6rem; }
+  .overall-lbl { font-size: 14px; font-weight: 600; color: var(--text); }
+  .ov-btns { display: flex; gap: 8px; }
+  .ov-btn { padding: 7px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--white); color: var(--text-light); transition: all .12s; }
+  .ov-btn.ok   { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); }
+  .ov-btn.fail { background: var(--red-bg);   color: var(--red-text);   border-color: var(--red-border); }
+
+  .month-block { border: 1px solid var(--gray-mid); border-radius: var(--radius); margin-bottom: .5rem; overflow: hidden; }
+  .month-hdr { display: flex; align-items: center; justify-content: space-between; padding: .7rem 1rem; cursor: pointer; background: var(--gray-bg); user-select: none; }
+  .month-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .month-pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+  .pill-pending { background: var(--gray-mid);  color: var(--text-light); }
+  .pill-done    { background: var(--green-bg);  color: var(--green-text); }
+  .pill-issue   { background: var(--red-bg);    color: var(--red-text); }
+  .month-chev { font-size: 13px; color: var(--text-light); transition: transform .2s; margin-left: 6px; }
+  .month-body { display: none; padding: .75rem 1rem 1rem; border-top: 1px solid var(--gray-mid); background: var(--white); }
+  .month-body.open { display: block; }
+
+  .count-row { display: flex; align-items: center; gap: 10px; margin-bottom: .6rem; }
+  .count-row label { font-size: 13px; color: var(--text-mid); }
+  .count-inp { width: 64px; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); padding: 7px 10px; font-family: 'DM Mono', monospace; font-size: 15px; color: var(--text); text-align: center; outline: none; }
+  .count-inp:focus { border-color: var(--navy-mid); }
+
+  .def-header { display: grid; grid-template-columns: 1fr 1fr 90px; gap: 6px; margin-bottom: .35rem; }
+  .def-header span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-light); }
+  .def-row { display: grid; grid-template-columns: 1fr 1fr 90px; gap: 6px; margin-bottom: .35rem; }
+  .def-inp { width: 100%; border: 1.5px solid var(--gray-border); border-radius: var(--radius-sm); padding: 7px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text); outline: none; }
+  .def-inp:focus { border-color: var(--navy-mid); }
+  .add-def { width: 100%; padding: 7px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: var(--navy-mid); background: none; border: 1.5px dashed var(--gray-border); border-radius: var(--radius-sm); cursor: pointer; margin-top: .25rem; }
+
+  .sig-wrap { border: 1.5px dashed var(--gray-border); border-radius: var(--radius-sm); height: 65px; position: relative; overflow: hidden; background: var(--gray-bg); cursor: crosshair; }
+  .sig-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; }
+  .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 12px; color: var(--text-light); pointer-events: none; }
+  .sig-clear { font-size: 11px; font-weight: 500; color: var(--text-light); background: none; border: none; cursor: pointer; margin-top: 4px; padding: 0; }
+
+  .save-footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(240,237,232,.97); backdrop-filter: blur(8px); padding: .65rem 1rem; border-top: 1px solid var(--gray-mid); z-index: 50; display: flex; gap: .5rem; }
+  .btn-email { flex: 1; padding: 13px; background: var(--orange); color: #fff; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+  .btn-copy  { flex: 1; padding: 13px; background: var(--navy);   color: #fff; border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+  .btn-email:active, .btn-copy:active { opacity: .82; }
+
+  .legend { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  .leg { font-size: 11px; background: var(--gray-bg); border: 1px solid var(--gray-mid); border-radius: 5px; padding: 3px 8px; color: var(--text-mid); }
+  .leg b { color: var(--text); }
+
+  .toast { position: fixed; bottom: 5.5rem; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 22px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ── PASSWORD SCREEN ── -->
+<div id="pw-screen" style="position:fixed;inset:0;background:#1a2e5a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:2rem;">
+  <div style="display:flex;gap:4px;align-items:center;margin-bottom:.5rem;">
+    <span style="width:6px;height:24px;background:#5b8ef0;border-radius:2px;display:inline-block;"></span>
+    <span style="width:6px;height:24px;background:#ea6a27;border-radius:2px;display:inline-block;"></span>
+    <span style="font-family:'DM Sans',sans-serif;font-size:24px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-left:4px;">DYNAMIC</span>
+  </div>
+  <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:.4px;text-transform:uppercase;margin-bottom:2.5rem;">Electric &amp; Fire Protection Inc.</div>
+  <div style="background:#fff;border-radius:14px;padding:2rem 1.75rem;width:100%;max-width:340px;text-align:center;">
+    <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:#1a2e5a;margin-bottom:.35rem;">Monthly Inspection Form</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:#888;margin-bottom:1.5rem;">Enter your access password to continue</div>
+    <input id="pw-input" type="password" placeholder="Password"
+      style="width:100%;border:1.5px solid #d4d4d0;border-radius:8px;padding:11px 14px;font-family:'DM Sans',sans-serif;font-size:16px;color:#1a1a1a;outline:none;text-align:center;letter-spacing:.1em;margin-bottom:.75rem;"
+      onkeydown="if(event.key==='Enter')checkPW()">
+    <div id="pw-error" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#a32d2d;margin-bottom:.6rem;min-height:18px;"></div>
+    <button onclick="checkPW()"
+      style="width:100%;padding:13px;background:#ea6a27;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.2px;">
+      Enter
+    </button>
+  </div>
+  <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,.3);margin-top:2rem;">Contact your supervisor for access</div>
+</div>
+
+<script>
+// ── SET YOUR PASSWORD HERE ──────────────────────────────
+const ACCESS_PASSWORD = 'Dynamic2025';
+// ───────────────────────────────────────────────────────
+
+function checkPW() {
+  const input = document.getElementById('pw-input').value;
+  if (input === ACCESS_PASSWORD) {
+    document.getElementById('pw-screen').style.display = 'none';
+    sessionStorage.setItem('dynamic_auth', '1');
+  } else {
+    const err = document.getElementById('pw-error');
+    err.textContent = 'Incorrect password — try again';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+    setTimeout(() => { err.textContent = ''; }, 3000);
+  }
+}
+// Stay unlocked for the session (won't re-prompt on refresh within same tab)
+if (sessionStorage.getItem('dynamic_auth') === '1') {
+  document.getElementById('pw-screen').style.display = 'none';
+}
+</script>
+
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div class="logo-mark"><span class="lb lb-b"></span><span class="lb lb-o"></span></div>
+    <div>
+      <div class="logo-text">DYNAMIC</div>
+      <div class="logo-sub">Electric &amp; Fire Protection Inc. · 613-226-9967</div>
+    </div>
+    <div class="top-right">Monthly<br>Inspection</div>
+  </div>
+  <div class="site-bar">
+    <label>Site</label>
+    <select class="site-select" id="site-select" onchange="onSiteChange(this)">
+      <option value="">— Select site —</option>
+    </select>
+    <input class="site-custom" id="site-custom" type="text" placeholder="Type site name...">
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('fa',this)">🔔 Fire Alarm<span class="tab-status" id="ts-fa">—</span></button>
+    <button class="tab-btn" onclick="switchTab('sp',this)">💧 Sprinkler<span class="tab-status" id="ts-sp">—</span></button>
+    <button class="tab-btn" onclick="switchTab('el',this)">🧯 Ext &amp; E-Light<span class="tab-status" id="ts-el">—</span></button>
+  </div>
+</div>
+
+<!-- TAB 1 — FIRE ALARM -->
+<div class="section active" id="tab-fa">
+  <div class="card" style="background:var(--navy-light);border-color:#b5d4f4">
+    <div style="font-size:12px;color:var(--navy-mid);line-height:1.6"><b>CAN/ULC-S536-19</b> — Monthly test not required during the month the annual test is completed. NFCC requires records retained <b>minimum 2 years</b>.</div>
+  </div>
+  <div class="card">
+    <div class="card-title">FA Panel Info</div>
+    <div class="two">
+      <div class="field"><label class="lbl">FA Panel #</label><input class="inp" type="text" id="fa-fanum" placeholder="FA-"></div>
+      <div class="field"><label class="lbl">Asset #</label><input class="inp" type="text" id="fa-asset" placeholder="Asset #"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label class="lbl">Region</label><input class="inp" type="text" id="fa-region" placeholder="Region"></div>
+      <div class="field"><label class="lbl">Year</label><input class="inp" type="text" id="fa-year" placeholder="20__" maxlength="4"></div>
+    </div>
+  </div>
+  <div class="legend">
+    <div class="leg"><b>✓</b> Satisfactory</div>
+    <div class="leg"><b>✗</b> Unsatisfactory</div>
+    <div class="leg"><b>N/A</b> Not Applicable</div>
+    <div class="leg"><b>N/T</b> Not Tested</div>
+  </div>
+  <div id="fa-months"></div>
+</div>
+
+<!-- TAB 2 — SPRINKLER -->
+<div class="section" id="tab-sp">
+  <div class="card">
+    <div class="card-title">Building Information</div>
+    <div class="field"><label class="lbl">Address</label><input class="inp" type="text" id="sp-addr" placeholder="Street address"></div>
+    <div class="two">
+      <div class="field"><label class="lbl">System Type</label>
+        <select class="inp" id="sp-type"><option value="">Select...</option><option>Wet</option><option>Dry</option><option>Pre-action</option><option>Deluge</option></select>
+      </div>
+      <div class="field"><label class="lbl">Riser / System ID</label><input class="inp" type="text" id="sp-riser" placeholder="e.g. R-1"></div>
+    </div>
+    <div class="two">
+      <div class="field"><label class="lbl">Inspection Date</label><input class="inp" type="date" id="sp-date"></div>
+      <div class="field"><label class="lbl">Inspector</label><input class="inp" type="text" id="sp-inspector" placeholder="Name"></div>
+    </div>
+    <div class="field"><label class="lbl">Owner / Representative</label><input class="inp" type="text" id="sp-owner" placeholder="Name"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Monthly Inspection Checklist <span class="badge">OFC / NFPA 25</span></div>
+    <div id="sp-checklist"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Monthly Flow Alarm Test</div>
+    <div class="yn-row"><span class="yn-lbl">Flow alarm test conducted</span><div class="yn-btns"><button class="yn-btn" onclick="setYN(this,'sp-fat-done','y')">Yes</button><button class="yn-btn" onclick="setYN(this,'sp-fat-done','n')">No</button></div></div>
+    <div class="field"><label class="lbl">Zone / Waterflow switch activated</label><input class="inp" type="text" id="sp-fat-zone" placeholder="e.g. Zone 3 – 2nd Floor"></div>
+    <div class="yn-row"><span class="yn-lbl">Associated fire alarm zone activated correctly</span><div class="yn-btns"><button class="yn-btn" onclick="setYN(this,'sp-fat-fa','y')">Yes</button><button class="yn-btn" onclick="setYN(this,'sp-fat-fa','n')">No</button></div></div>
+    <div class="yn-row"><span class="yn-lbl">Signal received at monitoring station</span><div class="yn-btns"><button class="yn-btn" onclick="setYN(this,'sp-fat-sig','y')">Yes</button><button class="yn-btn" onclick="setYN(this,'sp-fat-sig','n')">No</button></div></div>
+    <div class="yn-row"><span class="yn-lbl">Time delay acceptable</span><div class="yn-btns"><button class="yn-btn" onclick="setYN(this,'sp-fat-delay','y')">Yes</button><button class="yn-btn" onclick="setYN(this,'sp-fat-delay','n')">No</button></div></div>
+    <div class="field" style="margin-top:.5rem"><label class="lbl">Comments</label><textarea class="inp" id="sp-fat-notes" rows="2" placeholder="Any notes..."></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Deficiencies &amp; Corrective Actions</div>
+    <div class="def-header"><span>Deficiency</span><span>Corrective Action</span><span>Date Fixed</span></div>
+    <div id="sp-defs"><div class="def-row"><input class="def-inp" type="text" placeholder="Issue"><input class="def-inp" type="text" placeholder="Action"><input class="def-inp" type="date"></div></div>
+    <button class="add-def" onclick="addDef('sp-defs')">+ Add row</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Sign-off</div>
+    <div class="field"><label class="lbl">Inspector Signature</label><div class="sig-wrap"><canvas class="sig-canvas" id="sc-sp-insp"></canvas><span class="sig-hint">Sign here</span></div><button class="sig-clear" onclick="clearSig('sp-insp')">Clear</button></div>
+    <div class="field"><label class="lbl">Owner Rep Signature</label><div class="sig-wrap"><canvas class="sig-canvas" id="sc-sp-owner"></canvas><span class="sig-hint">Sign here</span></div><button class="sig-clear" onclick="clearSig('sp-owner')">Clear</button></div>
+    <div class="field"><label class="lbl">Date</label><input class="inp" type="date" id="sp-signdate"></div>
+  </div>
+</div>
+
+<!-- TAB 3 — EXTINGUISHER & EMERGENCY LIGHTING -->
+<div class="section" id="tab-el">
+  <div class="card">
+    <div class="card-title">Building Information</div>
+    <div class="field"><label class="lbl">Address</label><input class="inp" type="text" id="el-addr" placeholder="Street address"></div>
+    <div class="two">
+      <div class="field"><label class="lbl">Inspection Date</label><input class="inp" type="date" id="el-date"></div>
+      <div class="field"><label class="lbl">Inspector</label><input class="inp" type="text" id="el-inspector" placeholder="Name"></div>
+    </div>
+    <div class="field"><label class="lbl">Owner / Representative</label><input class="inp" type="text" id="el-owner" placeholder="Name"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Fire Extinguishers <span class="badge or">OFC §6.2</span></div>
+    <div class="count-row"><label>Total units on site</label><input class="count-inp" type="number" id="ext-count" placeholder="0" min="0"></div>
+    <div class="overall-row">
+      <span class="overall-lbl">All extinguishers inspected</span>
+      <div class="ov-btns">
+        <button class="ov-btn" id="ext-ov-pass" onclick="setOv('ext',this,'ok')">✓ Pass</button>
+        <button class="ov-btn" id="ext-ov-fail" onclick="setOv('ext',this,'fail')">✗ Fail</button>
+      </div>
+    </div>
+    <div id="ext-checks"></div>
+    <div class="field" style="margin-top:.5rem"><label class="lbl">General Notes</label><textarea class="inp" id="ext-notes" rows="2" placeholder="e.g. unit #4 requires recharge"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Emergency Lighting <span class="badge">OFC §2.8 / NFPA 101</span></div>
+    <div class="count-row"><label>Total units on site</label><input class="count-inp" type="number" id="eml-count" placeholder="0" min="0"></div>
+    <div class="overall-row">
+      <span class="overall-lbl">All emergency lighting inspected</span>
+      <div class="ov-btns">
+        <button class="ov-btn" id="eml-ov-pass" onclick="setOv('eml',this,'ok')">✓ Pass</button>
+        <button class="ov-btn" id="eml-ov-fail" onclick="setOv('eml',this,'fail')">✗ Fail</button>
+      </div>
+    </div>
+    <div id="eml-checks"></div>
+    <div class="field" style="margin-top:.5rem"><label class="lbl">General Notes</label><textarea class="inp" id="eml-notes" rows="2" placeholder="e.g. unit in stairwell B not charging"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Deficiencies &amp; Corrective Actions</div>
+    <div class="def-header"><span>Deficiency</span><span>Corrective Action</span><span>Date Fixed</span></div>
+    <div id="el-defs"><div class="def-row"><input class="def-inp" type="text" placeholder="Issue"><input class="def-inp" type="text" placeholder="Action"><input class="def-inp" type="date"></div></div>
+    <button class="add-def" onclick="addDef('el-defs')">+ Add row</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Sign-off</div>
+    <div class="field"><label class="lbl">Inspector Signature</label><div class="sig-wrap"><canvas class="sig-canvas" id="sc-el-insp"></canvas><span class="sig-hint">Sign here</span></div><button class="sig-clear" onclick="clearSig('el-insp')">Clear</button></div>
+    <div class="field"><label class="lbl">Owner Rep Signature</label><div class="sig-wrap"><canvas class="sig-canvas" id="sc-el-owner"></canvas><span class="sig-hint">Sign here</span></div><button class="sig-clear" onclick="clearSig('el-owner')">Clear</button></div>
+    <div class="field"><label class="lbl">Date</label><input class="inp" type="date" id="el-signdate"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="save-footer">
+  <button class="btn-email" onclick="doEmail()">📧 Email Report</button>
+  <button class="btn-copy"  onclick="doCopy()">📋 Copy Report</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ╔══════════════════════════════════════════════════════╗
+// ║  CONFIGURATION — edit these two sections            ║
+// ╠══════════════════════════════════════════════════════╣
+// ║  1. Add your site/building names to this list       ║
+const SITES = [
+  '1770 WOODWARD',
+  // '2920 FAIRLEA',
+  // '2969 FAIRLEA',
+  // '3530 DOWNPATRICK', '3532 DOWNPATRICK', '3532 DOWNPATRICK', '150 CAROLINE', '1971 ST LAURENT', '1975 ST LAURENT', '305 METCALFE', '100 FOURTH', '415 GREENVIEW', '80 SANDCASTLE', '2880 CARLING', '2900 CARLING', '2181 NAVAHO', '3360 PAUL ANKA', '29 ANTARES', '1251 MARITIME', '578 TERRY FOX', '224 LYON', '125 SOMMERSET', '138 SOMMERSET', Add more sites here...
+];
+// ║  2. The email address completed reports go to       ║
+const REPORT_TO = 'operations@dynamicelectric.ca';
+// ╚══════════════════════════════════════════════════════╝
+
+const FA_CHECKS = [
+  {id:'fa_trouble',label:'System trouble signal indicator "OFF"',              group:'Fire Alarm System'},
+  {id:'fa_power',  label:'Power indication lamp "ON"',                         group:'Fire Alarm System'},
+  {id:'fa_op',     label:'Operation & inspection of one initiating field device (rotational)', group:'Fire Alarm System'},
+  {id:'fa_alert',  label:'Alert/alarm signal confirmed (rotational)',           group:'Fire Alarm System'},
+  {id:'fa_annun',  label:'Tested device annunciates correctly',                 group:'Fire Alarm System'},
+  {id:'fa_audible',label:'Common audible and visual trouble signal confirmed',  group:'Fire Alarm System'},
+  {id:'bat_clean', label:'Terminals cleaned and lubricated',                    group:'Battery'},
+  {id:'bat_clamp', label:'Terminal clamps secure',                              group:'Battery'},
+  {id:'bat_elec',  label:'Electrolyte level and specific gravity to specifications', group:'Battery'},
+  {id:'vc_phone',  label:'One emergency telephone tested for two-way communication (rotational)', group:'Voice Communication'},
+  {id:'vc_page',   label:'Voice paging to one zone tested (rotational)',         group:'Voice Communication'},
+];
+const SP_CHECKS = [
+  {id:'sp_cv', label:'Control valves in correct position and supervised'},
+  {id:'sp_vr', label:'Valve room accessible and maintained'},
+  {id:'sp_pg', label:'Pressure gauges in normal operating range'},
+  {id:'sp_nl', label:'No visible leaks on piping or fittings'},
+  {id:'sp_nd', label:'No physical damage or corrosion observed'},
+  {id:'sp_sh', label:'Sprinkler heads unobstructed and in good condition'},
+  {id:'sp_fdc',label:'Fire Department Connection accessible and capped'},
+  {id:'sp_dvr',label:'Dry valve room temperature maintained (dry systems)'},
+  {id:'sp_air',label:'Air pressure normal (dry systems)'},
+  {id:'sp_ad', label:'Alarm devices free from damage'},
+  {id:'sp_wm', label:'Water motor gong / electric bell condition acceptable'},
+  {id:'sp_aux',label:'Auxiliary drains in normal condition'},
+  {id:'sp_sgn',label:'Signage and identification visible'},
+  {id:'sp_clr',label:'No storage within sprinkler clearances'},
+];
+const EXT_CHECKS = [
+  {id:'ext_acc',label:'Accessible & mounted in designated location'},
+  {id:'ext_pg', label:'Pressure gauge in normal (green) range'},
+  {id:'ext_pin',label:'Safety pin and tamper seal intact'},
+  {id:'ext_dmg',label:'No visible damage, dents, or corrosion'},
+  {id:'ext_tag',label:'Inspection tag / last service date current'},
+];
+const EML_CHECKS = [
+  {id:'eml_pilot', label:'Pilot / charging indicator light on'},
+  {id:'eml_lamps', label:'Lamps operational (visual check)'},
+  {id:'eml_remote',label:'Remote heads / exit signs operational'},
+  {id:'eml_bat',   label:'Battery condition acceptable (no swelling/damage)'},
+  {id:'eml_loc',   label:'Units unobstructed and in designated locations'},
+];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const segState={}, ynState={}, ovState={};
+
+// ── SITE DROPDOWN ──────────────────────────────────────
+(function() {
+  const sel = document.getElementById('site-select');
+  SITES.forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+  const oth = document.createElement('option'); oth.value='__custom__'; oth.textContent='Other / New site...'; sel.appendChild(oth);
+})();
+
+function onSiteChange(sel) {
+  const c = document.getElementById('site-custom');
+  if (sel.value==='__custom__') { c.classList.add('show'); c.focus(); }
+  else { c.classList.remove('show'); c.value=''; }
+}
+function getSite() {
+  const sel=document.getElementById('site-select');
+  if (sel.value==='__custom__') return document.getElementById('site-custom').value.trim()||'Unknown Site';
+  return sel.value||'Unknown Site';
+}
+
+// ── TABS ───────────────────────────────────────────────
+function switchTab(id,btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── FIRE ALARM BUILD ───────────────────────────────────
+function buildFA() {
+  let html='';
+  MONTH_NAMES.forEach((m,idx)=>{
+    let body=`<div class="field"><label class="lbl">Date</label><input class="inp" type="date" id="fa-date-${idx}"></div>`;
+    let last='';
+    FA_CHECKS.forEach(c=>{
+      if(c.group!==last){body+=`<div class="group-hdr">${c.group}</div>`;last=c.group;}
+      body+=`<div class="check-row" id="cr-fa-${idx}-${c.id}">
+        <div class="check-lbl">${c.label}</div>
+        <div class="seg" id="seg-fa-${idx}-${c.id}">
+          <button class="sb" onclick="setSeg('fa-${idx}-${c.id}','ok',this)">✓</button>
+          <button class="sb" onclick="setSeg('fa-${idx}-${c.id}','fail',this)">✗</button>
+          <button class="sb" onclick="setSeg('fa-${idx}-${c.id}','na',this)">N/A</button>
+          <button class="sb" onclick="setSeg('fa-${idx}-${c.id}','nt',this)">N/T</button>
+        </div>
+        <textarea class="cmt-inp" id="cmt-fa-${idx}-${c.id}" rows="1" placeholder="Comments..."></textarea>
+      </div>`;
+    });
+    body+=`
+      <div class="field" style="margin-top:.6rem"><label class="lbl">Location of initiating device tested</label><input class="inp" type="text" id="fa-loc-dev-${idx}" placeholder="e.g. 3rd Floor East Stairwell"></div>
+      <div class="field"><label class="lbl">Location of emergency telephone tested</label><input class="inp" type="text" id="fa-loc-tel-${idx}" placeholder="Location"></div>
+      <div class="field"><label class="lbl">Voice page zone tested</label><input class="inp" type="text" id="fa-loc-zone-${idx}" placeholder="Zone name / number"></div>
+      <div class="field"><label class="lbl">Inspector name / company</label><input class="inp" type="text" id="fa-inspector-${idx}" placeholder="Name or company"></div>
+      <div class="field"><label class="lbl">Signature</label><div class="sig-wrap"><canvas class="sig-canvas" id="sc-fa-${idx}"></canvas><span class="sig-hint">Sign here</span></div><button class="sig-clear" onclick="clearSig('fa-${idx}')">Clear</button></div>
+      <div class="field"><label class="lbl">Notes / Deficiencies</label><textarea class="inp" id="fa-notes-${idx}" rows="2" placeholder="Any issues or observations..."></textarea></div>`;
+    html+=`<div class="month-block">
+      <div class="month-hdr" onclick="toggleMonth(${idx})">
+        <span class="month-name">${m}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="month-pill pill-pending" id="mpill-${idx}">Pending</span>
+          <span class="month-chev" id="mchev-${idx}">▾</span>
+        </div>
+      </div>
+      <div class="month-body" id="mbody-${idx}">${body}</div>
+    </div>`;
+  });
+  document.getElementById('fa-months').innerHTML=html;
+  for(let i=0;i<12;i++) initSig(`fa-${i}`);
+}
+
+function buildChecklist(containerId, checks, mode) {
+  document.getElementById(containerId).innerHTML = checks.map(c=>`
+    <div class="check-row" id="cr-${c.id}">
+      <div class="check-lbl">${c.label}</div>
+      <div class="seg" id="seg-${c.id}">
+        <button class="sb" onclick="setSeg('${c.id}','ok',this)">✓ Pass</button>
+        <button class="sb" onclick="setSeg('${c.id}','fail',this)">✗ Fail</button>
+        <button class="sb" onclick="setSeg('${c.id}','na',this)">N/A</button>
+        ${mode==='fa4'?'<button class="sb" onclick="setSeg(\''+c.id+'\',\'nt\',this)">N/T</button>':''}
+      </div>
+      <textarea class="cmt-inp" id="cmt-${c.id}" rows="1" placeholder="Comments..."></textarea>
+    </div>`).join('');
+}
+
+// ── INTERACTIONS ───────────────────────────────────────
+function toggleMonth(idx) {
+  const body=document.getElementById(`mbody-${idx}`);
+  const chev=document.getElementById(`mchev-${idx}`);
+  chev.style.transform=body.classList.toggle('open')?'rotate(180deg)':'';
+}
+
+function setSeg(key,val,btn) {
+  segState[key]=val;
+  document.getElementById(`seg-${key}`).querySelectorAll('.sb').forEach(b=>b.className='sb');
+  btn.className=`sb ${val}`;
+  const cmt=document.getElementById(`cmt-${key}`); if(cmt) cmt.classList.toggle('show',val==='fail');
+  const cr=document.getElementById(`cr-${key}`); if(cr) cr.classList.toggle('has-fail',val==='fail');
+  const m=key.match(/^fa-(\d+)-/); if(m) updatePill(parseInt(m[1]));
+}
+
+function updatePill(idx) {
+  const vals=FA_CHECKS.map(c=>segState[`fa-${idx}-${c.id}`]);
+  const pill=document.getElementById(`mpill-${idx}`);
+  if(vals.some(v=>v==='fail'))      {pill.textContent='Issues';   pill.className='month-pill pill-issue';}
+  else if(vals.every(v=>v))         {pill.textContent='Complete'; pill.className='month-pill pill-done';}
+  else                              {pill.textContent='Pending';  pill.className='month-pill pill-pending';}
+  const issues=Array.from({length:12},(_,i)=>FA_CHECKS.map(c=>segState[`fa-${i}-${c.id}`]).some(v=>v==='fail')).filter(Boolean).length;
+  const done  =Array.from({length:12},(_,i)=>FA_CHECKS.map(c=>segState[`fa-${i}-${c.id}`]).every(v=>v)).filter(Boolean).length;
+  document.getElementById('ts-fa').textContent=issues?`${issues} issue(s)`:done?`${done}/12 done`:'—';
+}
+
+function setYN(btn,key,val) {
+  ynState[key]=val;
+  btn.closest('.yn-btns').querySelectorAll('.yn-btn').forEach(b=>b.className='yn-btn');
+  btn.className=`yn-btn ${val==='y'?'y':'n'}`;
+}
+
+function setOv(prefix,btn,val) {
+  ovState[prefix]=val;
+  document.getElementById(`${prefix}-ov-pass`).className=`ov-btn${val==='ok'?' ok':''}`;
+  document.getElementById(`${prefix}-ov-fail`).className=`ov-btn${val==='fail'?' fail':''}`;
+}
+
+function addDef(cid) {
+  const r=document.createElement('div'); r.className='def-row';
+  r.innerHTML='<input class="def-inp" type="text" placeholder="Issue"><input class="def-inp" type="text" placeholder="Action"><input class="def-inp" type="date">';
+  document.getElementById(cid).appendChild(r);
+}
+
+// ── SIGNATURES ─────────────────────────────────────────
+function initSig(id) {
+  const c=document.getElementById(`sc-${id}`); if(!c) return;
+  const w=c.closest('.sig-wrap'); if(!w) return;
+  c.width=w.offsetWidth||360; c.height=w.offsetHeight||65;
+  const ctx=c.getContext('2d'); let drawing=false;
+  const pos=e=>{const r=c.getBoundingClientRect(),s=e.touches?e.touches[0]:e;return{x:(s.clientX-r.left)*(c.width/r.width),y:(s.clientY-r.top)*(c.height/r.height)};};
+  const start=e=>{e.preventDefault();drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);const h=w.querySelector('.sig-hint');if(h)h.style.display='none';};
+  const move =e=>{if(!drawing)return;e.preventDefault();const p=pos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#1a2e5a';ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();};
+  const end  =()=>{drawing=false;};
+  c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',end);
+  c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
+}
+function clearSig(id) {
+  const c=document.getElementById(`sc-${id}`); if(!c)return;
+  c.getContext('2d').clearRect(0,0,c.width,c.height);
+  const h=c.closest('.sig-wrap')?.querySelector('.sig-hint'); if(h)h.style.display='';
+}
+
+// ── REPORT BUILDER ─────────────────────────────────────
+const v=id=>{const e=document.getElementById(id);return e?(e.value||''):''};
+
+function buildReport() {
+  const site=getSite();
+  const monthYear=new Date().toLocaleString('en-CA',{month:'long',year:'numeric'});
+  const line='─'.repeat(54);
+  let t=`MONTHLY FIRE INSPECTION REPORT\nDynamic Electric & Fire Protection Inc.  ·  613-226-9967\nSite: ${site}  ·  ${monthYear}\n${line}\n`;
+
+  // Section 1 — Fire Alarm
+  t+=`\nSECTION 1 — FIRE ALARM SYSTEM (CAN/ULC-S536-19)\n`;
+  t+=`FA: ${v('fa-fanum')}  |  Asset: ${v('fa-asset')}  |  Region: ${v('fa-region')}  |  Year: ${v('fa-year')}\n${line}\n`;
+  let faAny=false;
+  MONTH_NAMES.forEach((m,idx)=>{
+    const keys=FA_CHECKS.map(c=>`fa-${idx}-${c.id}`);
+    if(!keys.some(k=>segState[k])&&!v(`fa-date-${idx}`)&&!v(`fa-inspector-${idx}`)) return;
+    faAny=true;
+    t+=`\n${m.toUpperCase()}${v(`fa-date-${idx}`)?' ('+v(`fa-date-${idx}`)+')':''}\n`;
+    if(v(`fa-inspector-${idx}`)) t+=`  Inspector: ${v(`fa-inspector-${idx}`)}\n`;
+    let last='';
+    FA_CHECKS.forEach(c=>{
+      if(c.group!==last){t+=`  [${c.group}]\n`;last=c.group;}
+      const s=segState[`fa-${idx}-${c.id}`]; if(!s) return;
+      const sym=s==='ok'?'✓':s==='fail'?'✗':s.toUpperCase();
+      t+=`    [${sym}] ${c.label}${v(`cmt-fa-${idx}-${c.id}`)?' — '+v(`cmt-fa-${idx}-${c.id}`):''}\n`;
+    });
+    if(v(`fa-loc-dev-${idx}`))  t+=`  Device tested: ${v(`fa-loc-dev-${idx}`)}\n`;
+    if(v(`fa-loc-tel-${idx}`))  t+=`  Tel location: ${v(`fa-loc-tel-${idx}`)}\n`;
+    if(v(`fa-loc-zone-${idx}`)) t+=`  Voice zone: ${v(`fa-loc-zone-${idx}`)}\n`;
+    if(v(`fa-notes-${idx}`))    t+=`  Notes: ${v(`fa-notes-${idx}`)}\n`;
+  });
+  if(!faAny) t+='  (No data entered)\n';
+
+  // Section 2 — Sprinkler
+  t+=`\n\n${line}\nSECTION 2 — SPRINKLER SYSTEM (OFC Div. B §6.5 / NFPA 25)\n`;
+  t+=`Address: ${v('sp-addr')}  |  System: ${v('sp-type')}  |  Riser: ${v('sp-riser')}\nDate: ${v('sp-date')}  |  Inspector: ${v('sp-inspector')}  |  Owner Rep: ${v('sp-owner')}\n${line}\n`;
+  SP_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
+  t+=`\nFlow Alarm Test:\n  Conducted: ${ynState['sp-fat-done']||'—'}  |  Zone: ${v('sp-fat-zone')}\n`;
+  t+=`  FA Zone OK: ${ynState['sp-fat-fa']||'—'}  |  Monitoring Signal: ${ynState['sp-fat-sig']||'—'}  |  Time Delay OK: ${ynState['sp-fat-delay']||'—'}\n`;
+  if(v('sp-fat-notes')) t+=`  Notes: ${v('sp-fat-notes')}\n`;
+
+  // Section 3 — Ext + EML
+  t+=`\n\n${line}\nSECTION 3 — FIRE EXTINGUISHERS & EMERGENCY LIGHTING (OFC)\n`;
+  t+=`Address: ${v('el-addr')}  |  Date: ${v('el-date')}  |  Inspector: ${v('el-inspector')}\n${line}\n`;
+  t+=`\nFire Extinguishers — ${v('ext-count')||'?'} units  |  Overall: ${ovState['ext']||'—'}\n`;
+  EXT_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
+  if(v('ext-notes')) t+=`  Notes: ${v('ext-notes')}\n`;
+  t+=`\nEmergency Lighting — ${v('eml-count')||'?'} units  |  Overall: ${ovState['eml']||'—'}\n`;
+  EML_CHECKS.forEach(c=>{const s=segState[c.id];if(!s)return;t+=`  [${s==='ok'?'✓':s==='fail'?'✗':'N/A'}] ${c.label}${v(`cmt-${c.id}`)?' — '+v(`cmt-${c.id}`):''}\n`;});
+  if(v('eml-notes')) t+=`  Notes: ${v('eml-notes')}\n`;
+
+  t+=`\n${line}\nNFCC / OFC — retain records minimum 2 years.\nTests per CAN/ULC-S536 and applicable NFPA standards.\n`;
+  return {text:t, site, monthYear};
+}
+
+// ── EMAIL & COPY ───────────────────────────────────────
+function doEmail() {
+  const {text,site,monthYear}=buildReport();
+  const sub=encodeURIComponent(`Monthly Fire Inspection — ${site} — ${monthYear}`);
+  const bod=encodeURIComponent(text);
+  window.location.href=`mailto:${REPORT_TO}?subject=${sub}&body=${bod}`;
+}
+function doCopy() {
+  const {text}=buildReport();
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>toast('✓ Report copied to clipboard')).catch(()=>{console.log(text);toast('See browser console');});}
+  else{console.log(text);toast('See browser console');}
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── INIT ───────────────────────────────────────────────
+buildFA();
+buildChecklist('sp-checklist', SP_CHECKS, '3');
+buildChecklist('ext-checks',   EXT_CHECKS,'3');
+buildChecklist('eml-checks',   EML_CHECKS,'3');
+initSig('sp-insp'); initSig('sp-owner');
+initSig('el-insp'); initSig('el-owner');
+</script>
+</body>
+</html>
